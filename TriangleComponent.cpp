@@ -2,8 +2,12 @@
 #include "Game.h"
 #include <directxmath.h>
 
+
 void TriangleComponent::Initialize()
 {
+	data.radius.x = 400;
+
+
 	ID3DBlob* errorVertexCode = nullptr;
 
 	auto res = D3DCompileFromFile(L"./Shaders/MyVeryFirstShader.hlsl",
@@ -32,9 +36,9 @@ void TriangleComponent::Initialize()
 		return;
 	}
 
-	D3D_SHADER_MACRO Shader_Macros[] = { "TEST", "1", "TCOLOR", "float4(0.0f, 1.0f, 0.0f, 1.0f)", nullptr, nullptr };
+	//D3D_SHADER_MACRO Shader_Macros[] = { "TEST", "1", "TCOLOR", "float4(0.0f, 1.0f, 0.0f, 1.0f)", nullptr, nullptr };
 	ID3DBlob* errorPixelCode;
-	res = D3DCompileFromFile(L"./Shaders/MyVeryFirstShader.hlsl", Shader_Macros /*macros*/, nullptr /*include*/, "PSMain", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &pixelBC, &errorPixelCode);
+	res = D3DCompileFromFile(L"./Shaders/MyVeryFirstShader.hlsl", nullptr /*macros*/, nullptr /*include*/, "PSMain", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &pixelBC, &errorPixelCode);
 
 	game->device->CreateVertexShader(
 		vertexBC->GetBufferPointer(),
@@ -72,13 +76,22 @@ void TriangleComponent::Initialize()
 		vertexBC->GetBufferSize(),
 		&layout);
 
-	DirectX::XMFLOAT4 points[6] = {
-		DirectX::XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f),	DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f),
-		DirectX::XMFLOAT4(-0.5f, -0.5f, 0.5f, 1.0f),	DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f),
-		DirectX::XMFLOAT4(0.5f, -0.5f, 0.5f, 1.0f),	DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f),
-		//DirectX::XMFLOAT4(-0.5f, 0.5f, 0.5f, 1.0f),	DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
+	DirectX::XMFLOAT4 points[8] = {
+		DirectX::XMFLOAT4(1.f, 1.f, 0.5f, 1.0f),	DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f),
+		DirectX::XMFLOAT4(-1.f, -1.f, 0.5f, 1.0f),	DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f),
+		DirectX::XMFLOAT4(1.f, -1.f, 0.5f, 1.0f),	DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f),
+		DirectX::XMFLOAT4(-1.f, 1.f, 0.5f, 1.0f),	DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
 	};
 
+	D3D11_BUFFER_DESC constBuffDesc;
+	constBuffDesc.Usage = D3D11_USAGE_DYNAMIC;
+	constBuffDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	constBuffDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	constBuffDesc.MiscFlags = 0;
+	constBuffDesc.StructureByteStride = 0;
+	constBuffDesc.ByteWidth = sizeof(ConstData);
+
+	game->device->CreateBuffer(&constBuffDesc, nullptr, &constantBuffer);
 
 	D3D11_BUFFER_DESC vertexBufDesc = {};
 	vertexBufDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -96,7 +109,7 @@ void TriangleComponent::Initialize()
 	game->device->CreateBuffer(&vertexBufDesc, &vertexData, &vb);
 
 
-	int indeces[] = { 0,1,2 };
+	int indeces[] = { 0,1,2, 0, 1, 3 };
 	D3D11_BUFFER_DESC indexBufDesc = {};
 	indexBufDesc.Usage = D3D11_USAGE_DEFAULT;
 	indexBufDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
@@ -112,6 +125,7 @@ void TriangleComponent::Initialize()
 
 	game->device->CreateBuffer(&indexBufDesc, &indexData, &ib);
 
+
 	CD3D11_RASTERIZER_DESC rastDesc = {};
 	rastDesc.CullMode = D3D11_CULL_NONE;
 	rastDesc.FillMode = D3D11_FILL_SOLID;
@@ -125,6 +139,8 @@ void TriangleComponent::Initialize()
 void TriangleComponent::Draw()
 {
 	game->context->RSSetState(rastState);
+
+
 
 	D3D11_VIEWPORT viewport = {};
 	viewport.Width = static_cast<float>(game->Display->clientWidth);
@@ -140,10 +156,26 @@ void TriangleComponent::Draw()
 	game->context->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	game->context->IASetIndexBuffer(ib, DXGI_FORMAT_R32_UINT, 0);
 	game->context->IASetVertexBuffers(0, 1, &vb, strides, offsets);
+
+
+	D3D11_MAPPED_SUBRESOURCE res = {};
+	game->context->Map(constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &res);
+
+	//data.radius.x = 400;
+
+	auto dataPtr = reinterpret_cast<float*>(res.pData);
+	memcpy(dataPtr, &data, sizeof(ConstData));
+
+	game->context->Unmap(constantBuffer, 0);
+
+	game->context->PSSetConstantBuffers(0, 1, &constantBuffer);
+
 	game->context->VSSetShader(vertexShader, nullptr, 0);
 	game->context->PSSetShader(pixelShader, nullptr, 0);
 
-	game->context->DrawIndexed(3, 0, 0);
+	
+
+	game->context->DrawIndexed(6, 0, 0);
 }
 
 void TriangleComponent::DestroyResources()

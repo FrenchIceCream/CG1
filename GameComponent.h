@@ -1,6 +1,6 @@
 #pragma once
 class Game;
-
+#include "directxmath.h"
 class GameComponent
 {
 public:
@@ -13,5 +13,12 @@ public:
 	virtual void Draw() = 0;
 	virtual void Initialize() = 0;
 	virtual void Update() = 0;
+
+	struct ConstData
+	{
+		DirectX::XMFLOAT4 radius;
+	};
+
+	ConstData data;
 };
 

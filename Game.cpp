@@ -1,6 +1,6 @@
 #include "Game.h"
 #include "GameComponent.h"
-
+#include "TriangleComponent.h"
 Game::Game(LPCWSTR applicationName, long clientWidth, long clientHeight)
 {
 	HINSTANCE hInstance = GetModuleHandle(nullptr);
@@ -109,7 +109,7 @@ void Game::Run()
 
 void Game::Draw()
 {
-	float color[] = { totalTime, 0.1f, 0.1f, 1.0f };
+	float color[] = { 0.f, 0.f, 0.f, 1.0f };
 	context->ClearRenderTargetView(rtv, color);
 
 	for (GameComponent* comp : gameComponents)
@@ -130,6 +130,22 @@ void Game::MessageHandler()
 	// If windows signals to end the application then exit out.
 	if (msg.message == WM_QUIT) {
 		isExitRequested = true;
+	}
+
+	if (msg.message == VK_LEFT)
+	{
+		for (GameComponent* comp : gameComponents)
+		{
+			std::cout << "left\n";
+			comp->data.radius.x -= 100;
+		}
+	}
+	else if (msg.message == VK_RIGHT)
+	{
+		for (GameComponent* comp : gameComponents)
+		{
+			comp->data.radius.x += 100;
+		}
 	}
 }
 

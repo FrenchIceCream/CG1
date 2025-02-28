@@ -151,9 +151,6 @@
     <ClInclude Include="GameComponent.h" />
     <ClInclude Include="TriangleComponent.h" />
   </ItemGroup>
-  <ItemGroup>
-    <Natvis Include="Delegates.natvis" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

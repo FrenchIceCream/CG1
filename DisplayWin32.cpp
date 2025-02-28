@@ -11,6 +11,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umessage, WPARAM wparam, LPARAM lparam)
 			std::cout << "Key: " << static_cast<unsigned int>(wparam) << std::endl;
 
 			if (static_cast<unsigned int>(wparam) == 27) PostQuitMessage(0);
+			else if ((static_cast<unsigned int>(wparam) == 37)) //влево
+			{
+				PostMessage(hwnd, VK_LEFT, wparam, lparam);
+			}
+			else if ((static_cast<unsigned int>(wparam) == 39)) //вправо
+			{
+				PostMessage(hwnd, VK_RIGHT, wparam, lparam);
+			}
 			return 0;
 		}
 		default:
